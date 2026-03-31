@@ -1,6 +1,8 @@
+fastapi
+uvicorn
+pydantic
 pandas
-numpy
-matplotlib
-jupyter
+scikit-learn
 joblib
 xgboost
+python-multipart
