@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Forecast - Прогноз вызовов</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📞 Прогноз количества вызовов</h1>
+            <p>Получите почасовой прогноз на любой день</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="forecastForm">
+                    <div class="form-group">
+                        <label for="date">Выберите дату:</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span>🔮</span> Получить прогноз
+                    </button>
+                </form>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Загрузка прогноза...</p>
+            </div>
+
+            <div id="result" class="result-container"></div>
+        </main>
+
+        <footer>
+            <p>Call Volume Forecast API v1.0 | Прогноз на основе исторических данных</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
