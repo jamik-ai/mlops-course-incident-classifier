@@ -28,6 +28,6 @@ jobs:
         with:
           node-version: '20'                  # Можно указать 18, 20, 22 LTS
       - name: Install ESLint
-        run: npm install -g eslint           # Глобальная установка, или через npx
+        run: npm install -g eslint@8          # Глобальная установка, или через npx
       - name: Run ESLint
         run: eslint . --ext .js,.jsx,.mjs,.cjs
