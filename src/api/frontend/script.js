@@ -91,8 +91,6 @@ function displayForecast(container, data) {
                 <tbody>
     `;
 
-    const maxForBar = maxForecast;
-
     for (let i = 0; i < hourlyForecast.length; i++) {
         const forecast = hourlyForecast[i];
         html += `
