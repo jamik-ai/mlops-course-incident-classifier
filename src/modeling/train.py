@@ -1,6 +1,5 @@
 import pandas as pd
 import joblib
-from pathlib import Path
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
