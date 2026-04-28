@@ -1,0 +1,4 @@
+FROM nginx:alpine
+# Копируем статические файлы (HTML, JS, CSS) в стандартную папку nginx
+COPY ./src/api/frontend /usr/share/nginx/html
+EXPOSE 80

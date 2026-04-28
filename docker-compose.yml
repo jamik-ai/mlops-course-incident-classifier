@@ -23,12 +23,12 @@ services:
       start_period: 10s
 
   frontend:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     container_name: call_forecast_frontend
     ports:
       - "80:80"
-    volumes:
-      - ./src/api/frontend:/usr/share/nginx/html:ro
     restart: unless-stopped
     networks:
       - forecast_network

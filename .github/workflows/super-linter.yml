@@ -4,30 +4,44 @@
 # You can adjust the behavior by modifying this file.
 # For more information, see:
 # https://github.com/github/super-linter
-name: Lint
-on: [push, pull_request]
+name: Lint & Build
+on:
+  pull_request:
+    branches: [ main ]   # запуск при MR в main
+  push:
+    branches: [ main ]
 
 jobs:
-  lint:
+  lint-python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install linter
+      - name: Install Ruff
         run: pip install ruff
-      - name: Run linter
+      - name: Ruff check
         run: ruff check .
 
   lint-js:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4           # Устанавливаем Node.js
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'                  # Можно указать 18, 20, 22 LTS
+          node-version: '20'
       - name: Install ESLint
-        run: npm install -g eslint@8          # Глобальная установка, или через npx
+        run: npm install -g eslint@8
       - name: Run ESLint
-        run: eslint . --ext .js,.jsx,.mjs,.cjs
+        run: eslint ./src/api/frontend --ext .js,.jsx,.mjs,.cjs
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-python, lint-js]   # билдим только если линтеры прошли
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images
+        run: |
+          docker build -t backend:ci .
+          docker build -f Dockerfile.frontend -t frontend:ci .
