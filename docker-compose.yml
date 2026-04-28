@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: call_forecast_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=development
+    volumes:
+      - ./src:/app/src
+      - ./models:/app/models
+    restart: unless-stopped
+    networks:
+      - forecast_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: nginx:alpine
+    container_name: call_forecast_frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./src/api/frontend:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - forecast_network
+    depends_on:
+      - backend
+
+networks:
+  forecast_network:
+    driver: bridge
