@@ -4,7 +4,7 @@
 # You can adjust the behavior by modifying this file.
 # For more information, see:
 # https://github.com/github/super-linter
-name: Lint Python
+name: Lint
 on: [push, pull_request]
 
 jobs:
