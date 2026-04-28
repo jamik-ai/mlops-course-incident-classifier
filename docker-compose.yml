@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Backend API сервис
   backend:
     build: .
     container_name: call_forecast_backend
@@ -11,7 +10,6 @@ services:
       - PYTHONPATH=/app
       - ENVIRONMENT=development
     volumes:
-      # Для разработки (горячая перезагрузка)
       - ./src:/app/src
       - ./models:/app/models
     restart: unless-stopped
