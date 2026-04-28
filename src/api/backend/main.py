@@ -16,6 +16,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 @app.post("/api/forecast", response_model=ForecastResponse)
 def forecast(request: ForecastRequest):
     try:
