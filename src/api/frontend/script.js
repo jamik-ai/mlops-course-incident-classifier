@@ -95,9 +95,6 @@ function displayForecast(container, data) {
 
     for (let i = 0; i < hourlyForecast.length; i++) {
         const forecast = hourlyForecast[i];
-        const barWidth = (forecast / maxForBar) * 100;
-        const isPeak = forecast === maxForecast;
-
         html += `
             <tr>
                 <td class="hour-cell">${i}:00</td>
