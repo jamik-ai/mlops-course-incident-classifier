@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: call-forecast-drift-retraining
+  namespace: mlops
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: retraining
+              image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "src.pipelines.auto_retrain"]
+              env:
+                - name: PYTHONPATH
+                  value: /app
+                - name: MLFLOW_TRACKING_URI
+                  value: http://mlflow:5000

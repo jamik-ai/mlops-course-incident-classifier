@@ -1,0 +1,80 @@
+services:
+  backend:
+    build: .
+    container_name: call_forecast_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_NAME=call-volume-forecast
+    volumes:
+      - ./src:/app/src
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./reports:/app/reports
+    depends_on:
+      - mlflow
+    networks:
+      - forecast_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: call_forecast_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - forecast_network
+
+  mlflow:
+    image: python:3.11-slim
+    container_name: call_forecast_mlflow
+    command: >
+      sh -c " pip install mlflow==2.19.0 && mkdir -p /mlflow/artifacts && mlflow server --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root /mlflow/artifacts --host 0.0.0.0 --port 5000 "
+    ports:
+      - "5001:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - forecast_network
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: call_forecast_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - backend
+    networks:
+      - forecast_network
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: call_forecast_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - forecast_network
+
+volumes:
+  grafana-storage:
+  mlflow_data:
+
+
+networks:
+  forecast_network:
+    driver: bridge

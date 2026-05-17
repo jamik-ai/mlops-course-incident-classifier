@@ -1,0 +1,4 @@
+outs:
+  - md5: placeholder-current-dataset
+    size: 0
+    path: current_dataset.csv

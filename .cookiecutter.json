@@ -1,0 +1,7 @@
+{
+  "project_name": "mlops-course-incident-classifier",
+  "repo_name": "mlops-course-incident-classifier",
+  "module_name": "src",
+  "author_name": "jamik-ai",
+  "description": "MLOps project for call volume forecasting with drift detection and retraining"
+}

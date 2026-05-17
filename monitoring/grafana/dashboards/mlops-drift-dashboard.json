@@ -1,0 +1,19 @@
+{
+  "uid": "mlops-drift",
+  "title": "MLOps Drift Monitoring",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {"type":"stat","title":"Data drift share","gridPos":{"x":0,"y":0,"w":6,"h":4},"targets":[{"expr":"ml_data_drift_share"}]},
+    {"type":"stat","title":"Data drift detected","gridPos":{"x":6,"y":0,"w":6,"h":4},"targets":[{"expr":"ml_data_drift_detected"}]},
+    {"type":"stat","title":"Target drift detected","gridPos":{"x":12,"y":0,"w":6,"h":4},"targets":[{"expr":"ml_target_drift_detected"}]},
+    {"type":"stat","title":"Concept drift detected","gridPos":{"x":18,"y":0,"w":6,"h":4},"targets":[{"expr":"ml_concept_drift_detected"}]},
+    {"type":"timeseries","title":"Feature PSI","gridPos":{"x":0,"y":4,"w":12,"h":8},"targets":[{"expr":"ml_feature_psi"}]},
+    {"type":"timeseries","title":"Feature KS p-value","gridPos":{"x":12,"y":4,"w":12,"h":8},"targets":[{"expr":"ml_feature_ks_pvalue"}]},
+    {"type":"timeseries","title":"Feature Jensen-Shannon","gridPos":{"x":0,"y":12,"w":12,"h":8},"targets":[{"expr":"ml_feature_js_distance"}]},
+    {"type":"timeseries","title":"Model MAE","gridPos":{"x":12,"y":12,"w":12,"h":8},"targets":[{"expr":"ml_model_mae"}]}
+  ],
+  "templating":{"list":[]},
+  "time":{"from":"now-6h","to":"now"}
+}
