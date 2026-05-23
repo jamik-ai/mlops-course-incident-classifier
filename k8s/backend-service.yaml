@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: call-forecast-backend
+  namespace: mlops
+spec:
+  selector:
+    app: call-forecast-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP

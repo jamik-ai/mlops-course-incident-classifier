@@ -1,0 +1,7 @@
+[core]
+    # DVC config. Set your real remote URL in environment or replace below.
+
+[remote "storage"]
+    # Use environment variable DVC_REMOTE_URL for production (e.g. s3://bucket/path).
+    # For local testing default to a local directory inside the repo.
+    url = ${DVC_REMOTE_URL:-./data/dvc}

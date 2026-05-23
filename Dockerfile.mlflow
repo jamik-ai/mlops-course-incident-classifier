@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN python -m pip install --upgrade pip && \
+    pip install "mlflow[s3]==2.19.0" psycopg2-binary
+
+RUN mkdir -p /tmp/mlflow/artifacts
+WORKDIR /tmp/mlflow
+
+EXPOSE 5000
+
+CMD mlflow server --backend-store-uri "${MLFLOW_BACKEND_STORE_URI:-sqlite:////tmp/mlflow/mlflow.db}" --default-artifact-root "${MLFLOW_DEFAULT_ARTIFACT_ROOT:-/tmp/mlflow/artifacts}" --host 0.0.0.0 --port 5000
