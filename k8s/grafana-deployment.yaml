@@ -1,0 +1,316 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.3.0
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: admin
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards-conf
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboard-json
+              mountPath: /var/lib/grafana/dashboards
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-storage-pvc
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources
+        - name: grafana-dashboards-conf
+          configMap:
+            name: grafana-dashboards-conf
+        - name: grafana-dashboard-json
+          configMap:
+            name: grafana-dashboard-json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: mlops
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: mlops
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-conf
+  namespace: mlops
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-json
+  namespace: mlops
+data:
+  mlops-drift-dashboard.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.5}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 3, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false, "fields": ""}, "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"},
+          "title": "Data Drift Detected",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_data_drift_detected", "legendFormat": "{{instance}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.5}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 3, "x": 3, "y": 0},
+          "id": 2,
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false, "fields": ""}, "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"},
+          "title": "Target Drift Detected",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_target_drift_detected", "legendFormat": "{{instance}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.5}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 3, "x": 6, "y": 0},
+          "id": 3,
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false, "fields": ""}, "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"},
+          "title": "Concept Drift Detected",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_concept_drift_detected", "legendFormat": "{{instance}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "#EAB839", "value": 0.1},
+                  {"color": "red", "value": 0.3}
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 3, "x": 9, "y": 0},
+          "id": 4,
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false, "fields": ""}, "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"},
+          "title": "Data Drift Share",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_data_drift_share", "legendFormat": "", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "#EAB839", "value": 10},
+                  {"color": "red", "value": 50}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 3, "x": 12, "y": 0},
+          "id": 5,
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false, "fields": ""}, "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "textMode": "auto"},
+          "title": "Model MAE",
+          "type": "stat",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_model_mae", "legendFormat": "", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": {"mode": "none"}},
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.2}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 6,
+          "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom"}},
+          "title": "Feature PSI",
+          "type": "timeseries",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_feature_psi", "legendFormat": "{{feature}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": {"mode": "none"}},
+              "thresholds": {
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 0.05}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 7,
+          "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom"}},
+          "title": "Feature KS p-value",
+          "type": "timeseries",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_feature_ks_pvalue", "legendFormat": "{{feature}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": {"mode": "none"}},
+              "thresholds": {
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 0.1}
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "id": 8,
+          "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom"}},
+          "title": "Feature JS Distance",
+          "type": "timeseries",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_feature_js_distance", "legendFormat": "{{feature}}", "refId": "A"}]
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "fixed"},
+              "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "stacking": {"mode": "none"}},
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+          "id": 9,
+          "options": {"tooltip": {"mode": "multi", "sort": "desc"}, "legend": {"displayMode": "list", "placement": "bottom"}},
+          "title": "Model MAE Over Time",
+          "type": "timeseries",
+          "targets": [{"datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"}, "expr": "ml_model_mae", "legendFormat": "MAE", "refId": "A"}]
+        }
+      ],
+      "refresh": "15s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["mlops", "drift"],
+      "templating": {"list": []},
+      "time": {"from": "now-6h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "MLOps Drift Monitoring",
+      "uid": "mlops-drift-monitoring",
+      "version": 1
+    }
