@@ -1,15 +1,15 @@
-# This workflow executes several linters on changed files based on languages used in your code base whenever
-# you push a code or open a pull request.
-#
-# You can adjust the behavior by modifying this file.
-# For more information, see:
-# https://github.com/github/super-linter
-name: Lint & Build
+name: Lint, Test, Build & Deploy
+
 on:
   pull_request:
-    branches: [ main ]   # запуск при MR в main
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: mlops-course-incident-classifier
+  IMAGE_FRONTEND: mlops-course-incident-classifier-frontend
 
 jobs:
   lint-python:
@@ -49,14 +49,100 @@ jobs:
           pip install -r requirements.txt
           pip install pytest httpx
       - name: Run pytest
-        run: pytest tests/
+        run: pytest tests/ -v
 
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
-    needs: [lint-python, lint-js, test]   # билдим только если линтеры прошли
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker images
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (backend)
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_BACKEND }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+
+      - name: Extract metadata (frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: Dockerfile.frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+
+  deploy-k8s:
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update K8s image tags
         run: |
-          docker build -t backend:ci .
-          docker build -f Dockerfile.frontend -t frontend:ci .
+          SHA="${{ github.sha }}"
+          REGISTRY="${{ env.REGISTRY }}/${{ github.repository_owner }}"
+          for f in k8s/*.yaml; do
+            sed -i "s|image: .*${{ env.IMAGE_BACKEND }}:.*|image: ${REGISTRY}/${{ env.IMAGE_BACKEND }}:${SHA}|g" "$f"
+            sed -i "s|image: .*${{ env.IMAGE_FRONTEND }}:.*|image: ${REGISTRY}/${{ env.IMAGE_FRONTEND }}:${SHA}|g" "$f"
+          done
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubeconfig
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/pvcs.yaml
+          kubectl apply -f k8s/backend-deployment.yaml
+          kubectl apply -f k8s/backend-service.yaml
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl apply -f k8s/frontend-service.yaml
+          kubectl apply -f k8s/mlflow-deployment.yaml
+          kubectl apply -f k8s/mlflow-service.yaml
+          kubectl apply -f k8s/retraining-cronjob.yaml
+
+      - name: Restart deployments to pull new images
+        run: |
+          kubectl rollout restart deployment/call-forecast-backend -n mlops
+          kubectl rollout restart deployment/call-forecast-frontend -n mlops
+          kubectl rollout restart deployment/mlflow -n mlops

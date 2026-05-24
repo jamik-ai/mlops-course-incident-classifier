@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:latest
+          image: call-forecast-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

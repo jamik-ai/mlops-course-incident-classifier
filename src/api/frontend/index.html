@@ -7,33 +7,94 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <nav class="navbar">
+    <div class="nav-brand">📞 Call Center Forecast</div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-tab="forecast">Прогноз</button>
+      <button class="nav-btn" data-tab="history">Предсказания</button>
+      <button class="nav-btn" data-tab="drift">Дрейф</button>
+      <button class="nav-btn" data-tab="experiments">Эксперименты</button>
+      <button class="nav-btn" data-tab="alerts">Уведомления <span id="alertBadge" class="badge hidden">0</span></button>
+    </div>
+  </nav>
+
   <main class="container">
-    <section class="card hero">
-      <p class="eyebrow">MLOps service</p>
-      <h1>Прогноз нагрузки по вызовам</h1>
-      <p>FastAPI, XGBoost, MLflow, Drift Detection, Prometheus и Grafana в одном контуре.</p>
+    <!-- FORECAST TAB -->
+    <section id="tab-forecast" class="tab-content active">
+      <div class="grid-2">
+        <form id="forecastForm" class="card">
+          <h2>Получить прогноз</h2>
+          <label for="date">Дата прогноза</label>
+          <input id="date" type="date" required />
+          <button type="submit">Построить прогноз</button>
+          <div id="loading" class="loading">Загрузка...</div>
+        </form>
+
+        <div class="card" id="driftFlagsCard">
+          <h2>Статус дрейфа</h2>
+          <div id="driftFlagsContainer">
+            <div class="flag-row"><span class="flag-label">Data Drift:</span><span id="flag-data" class="flag-badge unknown">—</span></div>
+            <div class="flag-row"><span class="flag-label">Target Drift:</span><span id="flag-target" class="flag-badge unknown">—</span></div>
+            <div class="flag-row"><span class="flag-label">Concept Drift:</span><span id="flag-concept" class="flag-badge unknown">—</span></div>
+            <div class="flag-row small"><span>Last check:</span><span id="flag-last-check">—</span></div>
+          </div>
+          <button id="refreshFlagsBtn" type="button" class="secondary">Обновить статус</button>
+        </div>
+      </div>
+      <section id="result" class="card result"></section>
     </section>
 
-    <section class="grid">
-      <form id="forecastForm" class="card">
-        <h2>Получить прогноз</h2>
-        <label for="date">Дата прогноза</label>
-        <input id="date" type="date" required />
-        <button type="submit">Построить прогноз</button>
-        <div id="loading" class="loading">Загрузка...</div>
-      </form>
-
-      <section class="card">
-        <h2>Drift / Retraining</h2>
-        <button id="driftButton" type="button">Проверить drift</button>
-        <button id="reportButton" type="button">Открыть drift report</button>
-        <button id="retrainButton" type="button">Переобучить модель</button>
-        <div id="opsStatus" class="status"></div>
-      </section>
+    <!-- HISTORY TAB -->
+    <section id="tab-history" class="tab-content">
+      <div class="card">
+        <h2>Последние предсказания</h2>
+        <div id="historyTableWrap"></div>
+      </div>
     </section>
 
-    <section id="result" class="card result"></section>
+    <!-- DRIFT TAB -->
+    <section id="tab-drift" class="tab-content">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Drift / Retraining</h2>
+          <button id="driftButton" type="button">Проверить drift</button>
+          <button id="reportButton" type="button" class="secondary">Открыть drift report</button>
+          <button id="retrainButton" type="button" class="danger">Запустить переобучение</button>
+          <div id="opsStatus" class="status"></div>
+        </div>
+        <div class="card">
+          <h2>Флаги по признакам</h2>
+          <div id="featureFlagsTable"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPERIMENTS TAB -->
+    <section id="tab-experiments" class="tab-content">
+      <div class="card">
+        <h2>Эксперименты MLflow</h2>
+        <button id="refreshExpBtn" type="button" class="secondary">Обновить</button>
+        <div id="expLoading" class="loading">Загрузка...</div>
+        <div id="expErrors" class="error-msg"></div>
+        <div id="expNames" class="exp-names"></div>
+        <div id="expRuns" class="exp-runs"></div>
+      </div>
+    </section>
+
+    <!-- ALERTS TAB -->
+    <section id="tab-alerts" class="tab-content">
+      <div class="card">
+        <div class="alerts-header">
+          <h2>Уведомления</h2>
+          <button id="clearAlertsBtn" type="button" class="danger small-btn">Очистить</button>
+        </div>
+        <div id="alertsList"></div>
+      </div>
+    </section>
   </main>
+
+  <div id="toast" class="toast hidden"></div>
+
   <script src="script.js"></script>
 </body>
 </html>

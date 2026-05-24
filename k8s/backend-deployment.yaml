@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/test-org/mlops-course-incident-classifier:latest
+          image: call-forecast-backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
