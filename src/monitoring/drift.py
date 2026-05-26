@@ -1,17 +1,28 @@
 from __future__ import annotations
 
 import json
+import math
+import random
+import warnings
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from evidently import ColumnMapping
 from evidently.metric_preset import DataDriftPreset, TargetDriftPreset
 from evidently.report import Report
 from prometheus_client import Gauge
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import ks_2samp
+
+from src.utils.config import (
+    CURRENT_DATA_PATH,
+    DRIFT_REPORTS_PATH,
+    REFERENCE_DATA_PATH,
+)
 
 DATA_DRIFT_SCORE = Gauge("ml_data_drift_share", "Share of drifted input features")
 DATA_DRIFT_DETECTED = Gauge("ml_data_drift_detected", "1 if data drift is detected, else 0")
@@ -25,10 +36,10 @@ JS_BY_FEATURE = Gauge("ml_feature_js_distance", "Jensen-Shannon distance by feat
 
 @dataclass(frozen=True)
 class DriftConfig:
-    reference_path: Path = Path("data/reference/reference_dataset.csv")
-    current_path: Path = Path("data/current/current_dataset.csv")
-    report_html_path: Path = Path("reports/drift/latest.html")
-    report_json_path: Path = Path("reports/drift/latest.json")
+    reference_path: Path = REFERENCE_DATA_PATH
+    current_path: Path = CURRENT_DATA_PATH
+    report_html_path: Path = DRIFT_REPORTS_PATH / "latest.html"
+    report_json_path: Path = DRIFT_REPORTS_PATH / "latest.json"
     target_col: str = "count"
     prediction_col: str = "prediction"
     psi_threshold: float = 0.2
@@ -37,13 +48,67 @@ class DriftConfig:
     mae_relative_degradation_threshold: float = 0.2
 
 
+def generate_synthetic_current(days: int = 90, output_path: Path | None = None) -> pd.DataFrame:
+    """Generate fresh synthetic current dataset simulating realistic drift vs reference.
+
+    Uses the same base formula as the reference but covers a recent period,
+    introducing natural drift via seasonal shift and a stronger upward trend.
+    """
+    output_path = output_path or CURRENT_DATA_PATH
+    end = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    start = end - timedelta(days=days)
+    idx = pd.date_range(start=start, end=end, freq="h")
+
+    rng = random.Random()  # unseeded — always fresh noise
+    rows = []
+    for ts in idx:
+        hour = ts.hour
+        dow = ts.weekday()
+        month = ts.month
+        day_of_year = ts.timetuple().tm_yday
+        is_weekend = 1 if dow >= 5 else 0
+        daily = 10 * (1 + math.sin((hour - 8) / 24 * 2 * math.pi))
+        weekly = 3 * (1 + (0.5 if is_weekend else 0.0))
+        seasonal = 5 * math.sin(day_of_year / 365 * 2 * math.pi)
+        days_from_start = (ts - idx[0]).total_seconds() / 86400
+        # Stronger trend than reference (0.05 vs 0.02) to create noticeable drift in count
+        trend = 0.05 * days_from_start
+        count = max(0.0, round(30 + daily + weekly + seasonal + trend + rng.gauss(0, 2.5), 1))
+        prediction = round(max(0.0, count + rng.gauss(0, 1.5)), 1)
+        rows.append({
+            "datetime": ts.isoformat(),
+            "hour": hour,
+            "day_of_week": dow,
+            "month": month,
+            "day_of_year": day_of_year,
+            "is_weekend": is_weekend,
+            "count": count,
+            "prediction": prediction,
+        })
+
+    df = pd.DataFrame(rows)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, index=False)
+    return df
+
+
+def current_data_is_stale(path: Path, max_age_hours: int = 24) -> bool:
+    if not path.exists():
+        return True
+    age = datetime.utcnow().timestamp() - path.stat().st_mtime
+    return age > max_age_hours * 3600
+
+
 def read_dataset(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Dataset not found: {path}")
     try:
-        return pd.read_csv(path)
+        df = pd.read_csv(path)
     except Exception:
-        return pd.read_csv(path, sep=";")
+        df = pd.read_csv(path, sep=";")
+    if "datetime" in df.columns:
+        df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
+    return df
 
 
 def psi(reference: pd.Series, current: pd.Series, bins: int = 10, eps: float = 1e-6) -> float:
@@ -59,6 +124,19 @@ def psi(reference: pd.Series, current: pd.Series, bins: int = 10, eps: float = 1
     ref_pct = np.clip(ref_counts / max(ref_counts.sum(), 1), eps, None)
     cur_pct = np.clip(cur_counts / max(cur_counts.sum(), 1), eps, None)
     return float(np.sum((cur_pct - ref_pct) * np.log(cur_pct / ref_pct)))
+
+
+def _safe_ks_pvalue(reference: pd.Series, current: pd.Series) -> float:
+    reference = pd.to_numeric(reference, errors="coerce").dropna()
+    current = pd.to_numeric(current, errors="coerce").dropna()
+    if reference.empty or current.empty:
+        return 1.0
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        try:
+            return float(ks_2samp(reference, current).pvalue)
+        except Exception:
+            return 1.0
 
 
 def js_distance(reference: pd.Series, current: pd.Series, bins: int = 20, eps: float = 1e-8) -> float:
@@ -87,7 +165,7 @@ def _feature_metrics(reference_df: pd.DataFrame, current_df: pd.DataFrame, featu
     for feature in features:
         ref = pd.to_numeric(reference_df[feature], errors="coerce").dropna()
         cur = pd.to_numeric(current_df[feature], errors="coerce").dropna()
-        ks_pvalue = 1.0 if ref.empty or cur.empty else float(ks_2samp(ref, cur).pvalue)
+        ks_pvalue = _safe_ks_pvalue(ref, cur)
         feature_psi = psi(ref, cur)
         feature_js = js_distance(ref, cur)
         is_drifted = feature_psi >= config.psi_threshold or ks_pvalue < config.ks_pvalue_threshold or feature_js >= config.js_threshold
@@ -114,8 +192,14 @@ def run_drift_check(config: DriftConfig | None = None) -> dict[str, Any]:
     target_drift_detected = False
     target_metrics: dict[str, Any] = {}
     if config.target_col in reference_df.columns and config.target_col in current_df.columns:
-        target_ks = ks_2samp(pd.to_numeric(reference_df[config.target_col], errors="coerce").dropna(), pd.to_numeric(current_df[config.target_col], errors="coerce").dropna())
-        target_metrics = {"psi": psi(reference_df[config.target_col], current_df[config.target_col]), "ks_pvalue": float(target_ks.pvalue), "js_distance": js_distance(reference_df[config.target_col], current_df[config.target_col])}
+        target_ref = pd.to_numeric(reference_df[config.target_col], errors="coerce").dropna()
+        target_cur = pd.to_numeric(current_df[config.target_col], errors="coerce").dropna()
+        target_ks_pvalue = _safe_ks_pvalue(target_ref, target_cur)
+        target_metrics = {
+            "psi": psi(reference_df[config.target_col], current_df[config.target_col]),
+            "ks_pvalue": target_ks_pvalue,
+            "js_distance": js_distance(reference_df[config.target_col], current_df[config.target_col]),
+        }
         target_drift_detected = target_metrics["psi"] >= config.psi_threshold or target_metrics["ks_pvalue"] < config.ks_pvalue_threshold or target_metrics["js_distance"] >= config.js_threshold
 
     concept_drift_detected = False
@@ -129,8 +213,18 @@ def run_drift_check(config: DriftConfig | None = None) -> dict[str, Any]:
         MODEL_MAE.set(cur_mae)
 
     config.report_html_path.parent.mkdir(parents=True, exist_ok=True)
+    if "datetime" in reference_df.columns:
+        reference_df["datetime"] = pd.to_datetime(reference_df["datetime"], errors="coerce")
+    if "datetime" in current_df.columns:
+        current_df["datetime"] = pd.to_datetime(current_df["datetime"], errors="coerce")
+    column_mapping = ColumnMapping(
+        target=config.target_col,
+        prediction=config.prediction_col,
+    )
     report = Report(metrics=[DataDriftPreset(), TargetDriftPreset()])
-    report.run(reference_data=reference_df, current_data=current_df)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        report.run(reference_data=reference_df, current_data=current_df, column_mapping=column_mapping)
     report.save_html(str(config.report_html_path))
 
     result = {"data_drift_detected": data_drift_detected, "data_drift_share": data_drift_share, "target_drift_detected": target_drift_detected, "concept_drift_detected": concept_drift_detected, "features": feature_results, "target": target_metrics, "concept": concept_metrics, "html_report": str(config.report_html_path)}
