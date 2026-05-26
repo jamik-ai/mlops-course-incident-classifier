@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +31,7 @@ retrain_status: dict[str, Any] = {
 def _update_retrain_status(status: str, message: str, result: dict[str, Any] | None = None) -> None:
     retrain_status["status"] = status
     retrain_status["message"] = message
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if status == "running":
         retrain_status["started_at"] = now
         retrain_status["finished_at"] = None

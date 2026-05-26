@@ -5,7 +5,7 @@ import math
 import random
 import warnings
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +55,7 @@ def generate_synthetic_current(days: int = 90, output_path: Path | None = None) 
     introducing natural drift via seasonal shift and a stronger upward trend.
     """
     output_path = output_path or CURRENT_DATA_PATH
-    end = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    end = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days)
     idx = pd.date_range(start=start, end=end, freq="h")
 
@@ -95,7 +95,7 @@ def generate_synthetic_current(days: int = 90, output_path: Path | None = None) 
 def current_data_is_stale(path: Path, max_age_hours: int = 24) -> bool:
     if not path.exists():
         return True
-    age = datetime.utcnow().timestamp() - path.stat().st_mtime
+    age = datetime.now(timezone.utc).timestamp() - path.stat().st_mtime
     return age > max_age_hours * 3600
 
 

@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/test-org/mlops-course-incident-classifier:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
@@ -30,6 +30,13 @@ spec:
               value: http://mlflow:5000
             - name: MLFLOW_MODEL_NAME
               value: call-volume-forecast
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: app-models
+              mountPath: /app/models
+            - name: app-reports
+              mountPath: /app/reports
           readinessProbe:
             httpGet:
               path: /api/health
@@ -42,3 +49,13 @@ spec:
               port: 8000
             initialDelaySeconds: 20
             periodSeconds: 20
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc
+        - name: app-models
+          persistentVolumeClaim:
+            claimName: app-models-pvc
+        - name: app-reports
+          persistentVolumeClaim:
+            claimName: app-reports-pvc
