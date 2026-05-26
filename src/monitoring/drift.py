@@ -213,18 +213,18 @@ def run_drift_check(config: DriftConfig | None = None) -> dict[str, Any]:
         MODEL_MAE.set(cur_mae)
 
     config.report_html_path.parent.mkdir(parents=True, exist_ok=True)
-    if "datetime" in reference_df.columns:
-        reference_df["datetime"] = pd.to_datetime(reference_df["datetime"], errors="coerce")
-    if "datetime" in current_df.columns:
-        current_df["datetime"] = pd.to_datetime(current_df["datetime"], errors="coerce")
     column_mapping = ColumnMapping(
         target=config.target_col,
         prediction=config.prediction_col,
     )
+    # Drop datetime column before passing to Evidently — it causes np.can_cast()
+    # to fail on datetime64 types in evidently==0.4.40
+    ref_for_report = reference_df.drop(columns=["datetime"], errors="ignore")
+    cur_for_report = current_df.drop(columns=["datetime"], errors="ignore")
     report = Report(metrics=[DataDriftPreset(), TargetDriftPreset()])
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=RuntimeWarning)
-        report.run(reference_data=reference_df, current_data=current_df, column_mapping=column_mapping)
+        report.run(reference_data=ref_for_report, current_data=cur_for_report, column_mapping=column_mapping)
     report.save_html(str(config.report_html_path))
 
     result = {"data_drift_detected": data_drift_detected, "data_drift_share": data_drift_share, "target_drift_detected": target_drift_detected, "concept_drift_detected": concept_drift_detected, "features": feature_results, "target": target_metrics, "concept": concept_metrics, "html_report": str(config.report_html_path)}
