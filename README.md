@@ -130,11 +130,22 @@ python -m src.pipelines.auto_retrain
 
 Доступны манифесты в `k8s/` и ArgoCD приложение в `argocd/application.yaml`.
 
-Запуск примерный:
+Локальный запуск через Minikube:
 
 ```bash
-minikube start
+minikube start --driver=docker
+
+# Собрать образы внутри minikube (чтобы не тянуть из registry)
+eval $(minikube docker-env)
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier:latest .
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:latest -f Dockerfile.frontend .
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest -f Dockerfile.mlflow .
+
+# Применить манифесты
 kubectl apply -f k8s/
+
+# Открыть frontend
+minikube service call-forecast-frontend -n mlops
 ```
 
 ArgoCD:
