@@ -8,6 +8,10 @@ services:
       - PYTHONPATH=/app
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_MODEL_NAME=call-volume-forecast
+      # credentials for MinIO/MLflow artifact store (local dev)
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_ENDPOINT_URL=http://minio:9000
     volumes:
       - ./src:/app/src
       - ./models:/app/models

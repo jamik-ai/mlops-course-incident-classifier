@@ -145,6 +145,16 @@ kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/st
 kubectl apply -f argocd/application.yaml
 ```
 
+## CI/CD и деплой
+
+В репозитории настроен GitHub Actions workflow, который:
+- запускает линтеры и тесты,
+- собирает Docker-образы `backend`, `frontend`, `mlflow`,
+- пушит их в GitHub Container Registry (GHCR),
+- подцепляет Kubernetes через секрет `KUBE_CONFIG_DATA` и применяет манифесты из `k8s/`.
+
+Для работы CD нужно в GitHub установить секрет `KUBE_CONFIG_DATA` с Base64-кодированным kubeconfig и дать `GITHUB_TOKEN` доступ к GHCR.
+
 ## Структура
 
 - `src/api/backend/main.py` — FastAPI

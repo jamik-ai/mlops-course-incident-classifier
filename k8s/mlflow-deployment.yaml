@@ -15,31 +15,15 @@ spec:
     spec:
       containers:
         - name: mlflow
-          image: ghcr.io/test-org/mlops-course-incident-classifier-mlflow:latest
+          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest
+          imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
-          args: ["mlflow server --backend-store-uri \"$MLFLOW_BACKEND_STORE_URI\" --default-artifact-root \"$MLFLOW_DEFAULT_ARTIFACT_ROOT\" --host 0.0.0.0 --port 5000"]
-          env:
-            - name: MLFLOW_BACKEND_STORE_URI
-              value: postgresql+psycopg2://mlflow:mlflow@postgres:5432/mlflow
-            - name: MLFLOW_DEFAULT_ARTIFACT_ROOT
-              value: s3://mlflow
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: mlflow-s3-credentials
-                  key: accesskey
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: mlflow-s3-credentials
-                  key: secretkey
-            - name: AWS_ENDPOINT_URL
-              value: http://minio:9000
+          args: ["mlflow server --backend-store-uri 'sqlite:////tmp/mlflow/mlflow.db' --default-artifact-root '/tmp/mlflow/artifacts' --host 0.0.0.0 --port 5000"]
           ports:
             - containerPort: 5000
           volumeMounts:
             - name: mlflow-artifacts
-              mountPath: /mlflow/artifacts
+              mountPath: /tmp/mlflow/artifacts
       volumes:
         - name: mlflow-artifacts
           persistentVolumeClaim:
