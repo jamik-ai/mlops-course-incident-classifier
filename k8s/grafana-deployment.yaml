@@ -32,7 +32,9 @@ spec:
             - name: grafana-provisioning-dashboards
               mountPath: /etc/grafana/provisioning/dashboards
             - name: grafana-dashboard
-              mountPath: /etc/grafana/dashboards
+              mountPath: /etc/grafana/dashboards/backend-metrics.json
+            - name: grafana-mlops-dashboard
+              mountPath: /etc/grafana/dashboards/mlops-drift.json
       volumes:
         - name: grafana-data
           persistentVolumeClaim:
@@ -55,3 +57,9 @@ spec:
             items:
               - key: dashboard.json
                 path: backend-metrics.json
+        - name: grafana-mlops-dashboard
+          configMap:
+            name: grafana-provisioning
+            items:
+              - key: mlops-drift.json
+                path: mlops-drift.json

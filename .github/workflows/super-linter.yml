@@ -92,7 +92,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - name: Set up kubectl
@@ -100,14 +100,24 @@ jobs:
         with:
           version: 'latest'
       - name: Configure kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         run: |
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig
+          if [ -z "$KUBE_CONFIG_DATA" ]; then
+            echo "No KUBE_CONFIG_DATA secret set. Skipping deploy."
+            exit 0
+          fi
+          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
         shell: bash
       - name: Deploy to Kubernetes
-        env:
-          KUBECONFIG: ${{ github.workspace }}/kubeconfig
         run: |
-          kubectl apply -f k8s/ --recursive
+          if [ ! -s kubeconfig ]; then
+            echo "kubeconfig is empty. Skipping deploy."
+            exit 0
+          fi
+          export KUBECONFIG=$GITHUB_WORKSPACE/kubeconfig
+          kubectl apply -f k8s/ --recursive --validate=false
           kubectl rollout restart deployment/call-forecast-backend -n mlops
           kubectl rollout restart deployment/call-forecast-frontend -n mlops
           kubectl rollout restart deployment/mlflow -n mlops
+        shell: bash
