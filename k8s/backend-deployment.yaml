@@ -20,7 +20,7 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:
@@ -30,6 +30,12 @@ spec:
               value: http://mlflow:5000
             - name: MLFLOW_MODEL_NAME
               value: call-volume-forecast
+            - name: AWS_ENDPOINT_URL
+              value: http://minio:9000
+            - name: AWS_ACCESS_KEY_ID
+              value: minioadmin
+            - name: AWS_SECRET_ACCESS_KEY
+              value: minioadmin
           volumeMounts:
             - name: app-data
               mountPath: /app/data

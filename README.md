@@ -145,7 +145,7 @@ docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest 
 kubectl apply -f k8s/
 
 # Открыть frontend
-minikube service call-forecast-frontend -n mlops
+Dataset not found: /app/data/reference/reference_dataset.csv
 ```
 
 ArgoCD:

@@ -1,4 +1,4 @@
-const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = window.API_BASE_URL || '';
 
 function showToast(title, msg = '', type = 'info', duration = 6000) {
   const icons = { success: '✅', error: '❌', info: 'ℹ️' };

@@ -13,8 +13,13 @@ spec:
           containers:
             - name: retraining
               image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
-              imagePullPolicy: Always
+              imagePullPolicy: IfNotPresent
               command: ["python", "-m", "src.pipelines.auto_retrain"]
+              volumeMounts:
+                - name: app-data
+                  mountPath: /app/data
+                - name: app-models
+                  mountPath: /app/models
               env:
                 - name: PYTHONPATH
                   value: /app
@@ -28,15 +33,10 @@ spec:
                   value: minioadmin
                 - name: AWS_SECRET_ACCESS_KEY
                   value: minioadmin
-          volumeMounts:
+          volumes:
             - name: app-data
-              mountPath: /app/data
+              persistentVolumeClaim:
+                claimName: app-data-pvc
             - name: app-models
-              mountPath: /app/models
-      volumes:
-        - name: app-data
-          persistentVolumeClaim:
-            claimName: app-data-pvc
-        - name: app-models
-          persistentVolumeClaim:
-            claimName: app-models-pvc
+              persistentVolumeClaim:
+                claimName: app-models-pvc
