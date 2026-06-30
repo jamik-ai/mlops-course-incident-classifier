@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
+          image: ghcr.io/jamik-ai/mlops-course-incident-classifier:b7cab9bdf5f53a9eed8abfd605349d5ccfcfb1eb
           imagePullPolicy: Always
           ports:
             - containerPort: 8000

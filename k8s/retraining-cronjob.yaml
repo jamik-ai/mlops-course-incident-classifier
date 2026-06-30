@@ -12,7 +12,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: retraining
-              image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
+              image: ghcr.io/jamik-ai/mlops-course-incident-classifier:b7cab9bdf5f53a9eed8abfd605349d5ccfcfb1eb
               imagePullPolicy: Always
               command: ["python", "-m", "src.pipelines.auto_retrain"]
               volumeMounts:

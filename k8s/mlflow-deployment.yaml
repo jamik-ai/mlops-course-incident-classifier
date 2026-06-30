@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: mlflow
-          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest
+          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:b7cab9bdf5f53a9eed8abfd605349d5ccfcfb1eb
           imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args: ["mlflow server --backend-store-uri 'sqlite:////tmp/mlflow/mlflow.db' --default-artifact-root 's3://mlflow' --host 0.0.0.0 --port 5000"]
