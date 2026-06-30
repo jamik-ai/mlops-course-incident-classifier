@@ -89,12 +89,3 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mlops-course-incident-classifier-mlflow:latest
 
-  notify-argocd:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    steps:
-      - name: ArgoCD will auto-sync new images
-        run: |
-          echo "Docker images pushed to GHCR with tag latest"
-          echo "ArgoCD will detect the new images and sync them to the cluster automatically"
