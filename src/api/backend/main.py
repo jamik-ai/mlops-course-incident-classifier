@@ -14,7 +14,7 @@ from src.monitoring.drift import DriftConfig, current_data_is_stale, generate_sy
 from src.utils.config import CURRENT_DATA_PATH, DRIFT_REPORTS_PATH
 from src.pipelines.retrain import retrain_pipeline
 
-app = FastAPI(title="Call Volume Forecast API", version="1.2.0", description="Forecast API with drift detection, retraining and Prometheus metrics.")
+app = FastAPI(title="Call Volume Forecast API", version="1.3.0", description="Forecast API with drift detection, retraining and Prometheus metrics.")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
