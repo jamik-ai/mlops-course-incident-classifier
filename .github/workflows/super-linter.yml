@@ -89,35 +89,12 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mlops-course-incident-classifier-mlflow:latest
 
-  deploy:
+  notify-argocd:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-      - name: Configure kubeconfig
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+      - name: ArgoCD will auto-sync new images
         run: |
-          if [ -z "$KUBE_CONFIG_DATA" ]; then
-            echo "No KUBE_CONFIG_DATA secret set. Skipping deploy."
-            exit 0
-          fi
-          echo "$KUBE_CONFIG_DATA" | base64 --decode > kubeconfig
-        shell: bash
-      - name: Deploy to Kubernetes
-        run: |
-          if [ ! -s kubeconfig ]; then
-            echo "kubeconfig is empty. Skipping deploy."
-            exit 0
-          fi
-          export KUBECONFIG=$GITHUB_WORKSPACE/kubeconfig
-          kubectl apply -f k8s/ --recursive --validate=false
-          kubectl rollout restart deployment/call-forecast-backend -n mlops
-          kubectl rollout restart deployment/call-forecast-frontend -n mlops
-          kubectl rollout restart deployment/mlflow -n mlops
-        shell: bash
+          echo "Docker images pushed to GHCR with tag latest"
+          echo "ArgoCD will detect the new images and sync them to the cluster automatically"
