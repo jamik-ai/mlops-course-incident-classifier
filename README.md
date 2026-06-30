@@ -130,11 +130,22 @@ python -m src.pipelines.auto_retrain
 
 Доступны манифесты в `k8s/` и ArgoCD приложение в `argocd/application.yaml`.
 
-Запуск примерный:
+Локальный запуск через Minikube:
 
 ```bash
-minikube start
+minikube start --driver=docker
+
+# Собрать образы внутри minikube (чтобы не тянуть из registry)
+eval $(minikube docker-env)
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier:latest .
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:latest -f Dockerfile.frontend .
+docker build -t ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest -f Dockerfile.mlflow .
+
+# Применить манифесты
 kubectl apply -f k8s/
+
+# Открыть frontend
+Dataset not found: /app/data/reference/reference_dataset.csv
 ```
 
 ArgoCD:
@@ -144,6 +155,16 @@ kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl apply -f argocd/application.yaml
 ```
+
+## CI/CD и деплой
+
+В репозитории настроен GitHub Actions workflow, который:
+- запускает линтеры и тесты,
+- собирает Docker-образы `backend`, `frontend`, `mlflow`,
+- пушит их в GitHub Container Registry (GHCR),
+- подцепляет Kubernetes через секрет `KUBE_CONFIG_DATA` и применяет манифесты из `k8s/`.
+
+Для работы CD нужно в GitHub установить секрет `KUBE_CONFIG_DATA` с Base64-кодированным kubeconfig и дать `GITHUB_TOKEN` доступ к GHCR.
 
 ## Структура
 

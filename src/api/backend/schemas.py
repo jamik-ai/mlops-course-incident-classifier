@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -13,3 +16,11 @@ class ForecastResponse(BaseModel):
 class RetrainResponse(BaseModel):
     status: str
     message: str
+
+
+class RetrainStatusResponse(BaseModel):
+    status: str
+    message: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    result: dict[str, Any] | None = None

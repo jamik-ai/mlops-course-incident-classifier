@@ -15,8 +15,28 @@ spec:
               image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
               imagePullPolicy: IfNotPresent
               command: ["python", "-m", "src.pipelines.auto_retrain"]
+              volumeMounts:
+                - name: app-data
+                  mountPath: /app/data
+                - name: app-models
+                  mountPath: /app/models
               env:
                 - name: PYTHONPATH
                   value: /app
                 - name: MLFLOW_TRACKING_URI
                   value: http://mlflow:5000
+                - name: MLFLOW_MODEL_NAME
+                  value: call-volume-forecast
+                - name: AWS_ENDPOINT_URL
+                  value: http://minio:9000
+                - name: AWS_ACCESS_KEY_ID
+                  value: minioadmin
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: minioadmin
+          volumes:
+            - name: app-data
+              persistentVolumeClaim:
+                claimName: app-data-pvc
+            - name: app-models
+              persistentVolumeClaim:
+                claimName: app-models-pvc

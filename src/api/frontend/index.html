@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Call Volume Forecast</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <main class="container">
     <section class="card hero">
@@ -25,15 +27,35 @@
 
       <section class="card">
         <h2>Drift / Retraining</h2>
-        <button id="driftButton" type="button">Проверить drift</button>
-        <button id="reportButton" type="button">Открыть drift report</button>
-        <button id="retrainButton" type="button">Переобучить модель</button>
+        <div class="button-row">
+          <button id="generateSyntheticButton" type="button">Обновить синтетику</button>
+          <button id="driftButton" type="button">Проверить drift</button>
+          <button id="reportButton" type="button">Открыть drift report</button>
+          <button id="downloadReportButton" type="button">Скачать отчёт</button>
+          <button id="retrainButton" type="button">Переобучить модель</button>
+        </div>
+        <div id="syntheticInfo" class="status" style="font-size:0.85em; color:#888;"></div>
         <div id="opsStatus" class="status"></div>
+        <div id="modelResult" class="drift-result" style="display:none;"></div>
+        <div id="driftResult" class="drift-result"></div>
+        <div id="driftReport" class="drift-report" style="display:none; margin-top:16px;">
+          <iframe id="driftReportFrame" class="drift-iframe"></iframe>
+        </div>
       </section>
     </section>
 
     <section id="result" class="card result"></section>
   </main>
+  <div id="toastContainer" class="toast-container"></div>
   <script src="script.js"></script>
+
+  <!-- Modal for pretty JSON display -->
+  <div id="jsonModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button id="closeJsonModal" class="modal-close">✕</button>
+      <pre id="jsonModalContent"></pre>
+    </div>
+  </div>
 </body>
+
 </html>
