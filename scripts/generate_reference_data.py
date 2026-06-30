@@ -107,7 +107,7 @@ def main() -> None:
     now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
     end = now - timedelta(days=args.offset_days)
 
-    print(f"Generating reference data:")
+    print("Generating reference data:")
     print(f"  Period : {end - timedelta(days=args.days):%Y-%m-%d} → {end:%Y-%m-%d}")
     print(f"  Days   : {args.days}")
     print(f"  Seed   : {args.seed}")
