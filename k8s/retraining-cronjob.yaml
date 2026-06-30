@@ -13,7 +13,7 @@ spec:
           containers:
             - name: retraining
               image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               command: ["python", "-m", "src.pipelines.auto_retrain"]
               volumeMounts:
                 - name: app-data
