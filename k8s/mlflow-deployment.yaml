@@ -18,13 +18,14 @@ spec:
           image: ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
-          args: ["mlflow server --backend-store-uri 'sqlite:////tmp/mlflow/mlflow.db' --default-artifact-root '/tmp/mlflow/artifacts' --host 0.0.0.0 --port 5000"]
+          args: ["mlflow server --backend-store-uri 'sqlite:////tmp/mlflow/mlflow.db' --default-artifact-root 's3://mlflow' --host 0.0.0.0 --port 5000"]
           ports:
             - containerPort: 5000
-          volumeMounts:
-            - name: mlflow-artifacts
-              mountPath: /tmp/mlflow/artifacts
-      volumes:
-        - name: mlflow-artifacts
-          persistentVolumeClaim:
-            claimName: mlflow-artifacts-pvc
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: minioadmin
+            - name: AWS_SECRET_ACCESS_KEY
+              value: minioadmin
+            - name: AWS_ENDPOINT_URL
+              value: http://minio:9000
+      volumes: []

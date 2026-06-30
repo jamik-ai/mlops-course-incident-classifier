@@ -36,6 +36,8 @@ spec:
               value: minioadmin
             - name: AWS_SECRET_ACCESS_KEY
               value: minioadmin
+            - name: MLFLOW_DEFAULT_ARTIFACT_ROOT
+              value: s3://mlflow
           volumeMounts:
             - name: app-data
               mountPath: /app/data
