@@ -6,11 +6,11 @@
 # https://github.com/github/super-linter
 name: Lint & Build
 permissions:
-  contents: write
+  contents: read
   packages: write
 on:
   pull_request:
-    branches: [ main ]   # запуск при MR в main
+    branches: [ main ]
   push:
     branches: [ main ]
 
@@ -56,7 +56,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [lint-python, lint-js, test]   # билдим только если линтеры прошли
+    needs: [lint-python, lint-js, test]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -94,24 +94,3 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/mlops-course-incident-classifier-mlflow:latest
             ghcr.io/${{ github.repository_owner }}/mlops-course-incident-classifier-mlflow:${{ github.sha }}
-
-  cd:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-      - name: Update k8s manifests with new image tag and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          sed -i "s|ghcr.io/jamik-ai/mlops-course-incident-classifier:latest|ghcr.io/jamik-ai/mlops-course-incident-classifier:${{ github.sha }}|g" k8s/backend-deployment.yaml k8s/retraining-cronjob.yaml
-          sed -i "s|ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:latest|ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:${{ github.sha }}|g" k8s/frontend-deployment.yaml
-          sed -i "s|ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:latest|ghcr.io/jamik-ai/mlops-course-incident-classifier-mlflow:${{ github.sha }}|g" k8s/mlflow-deployment.yaml
-          git add k8s/
-          git commit -m "cd: update images to ${{ github.sha }}" || exit 0
-          git push origin HEAD:main
-
