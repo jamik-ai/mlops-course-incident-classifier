@@ -3,6 +3,9 @@ kind: CronJob
 metadata:
   name: call-forecast-drift-retraining
   namespace: mlops
+  annotations:
+    argocd-image-updater.argoproj.io/retraining.image-name: ghcr.io/jamik-ai/mlops-course-incident-classifier
+    argocd-image-updater.argoproj.io/retraining.update-strategy: latest
 spec:
   schedule: "0 */6 * * *"
   jobTemplate:
@@ -12,7 +15,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: retraining
-              image: ghcr.io/jamik-ai/mlops-course-incident-classifier:2eb4539afaea8259cbecdbacb235088659eb2c13
+              image: ghcr.io/jamik-ai/mlops-course-incident-classifier:latest
               imagePullPolicy: Always
               command: ["python", "-m", "src.pipelines.auto_retrain"]
               volumeMounts:

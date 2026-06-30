@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: call-forecast-frontend
   namespace: mlops
+  annotations:
+    argocd-image-updater.argoproj.io/frontend.image-name: ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend
+    argocd-image-updater.argoproj.io/frontend.update-strategy: latest
 spec:
   replicas: 1
   selector:
@@ -15,7 +18,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:2eb4539afaea8259cbecdbacb235088659eb2c13
+          image: ghcr.io/jamik-ai/mlops-course-incident-classifier-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
