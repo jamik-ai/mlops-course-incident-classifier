@@ -95,3 +95,64 @@ data:
         }
       ]
     }
+  mlops-drift.json: |
+    {
+      "id": null,
+      "uid": "mlops-drift",
+      "title": "MLOps Drift Monitoring",
+      "tags": ["mlops", "drift"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "15s",
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Data Drift Share",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_data_drift_share"}]
+        },
+        {
+          "id": 2, "type": "stat", "title": "Data Drift Detected",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_data_drift_detected"}]
+        },
+        {
+          "id": 3, "type": "stat", "title": "Target Drift Detected",
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_target_drift_detected"}]
+        },
+        {
+          "id": 4, "type": "stat", "title": "Concept Drift Detected",
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_concept_drift_detected"}]
+        },
+        {
+          "id": 5, "type": "timeseries", "title": "Feature PSI",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_feature_psi", "legendFormat": "{{feature}}"}]
+        },
+        {
+          "id": 6, "type": "timeseries", "title": "Feature KS p-value",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_feature_ks_pvalue", "legendFormat": "{{feature}}"}]
+        },
+        {
+          "id": 7, "type": "timeseries", "title": "Feature JS Distance",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_feature_js_distance", "legendFormat": "{{feature}}"}]
+        },
+        {
+          "id": 8, "type": "timeseries", "title": "Model MAE",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{"expr": "ml_model_mae"}]
+        }
+      ]
+    }
